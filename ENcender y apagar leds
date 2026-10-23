@@ -1,0 +1,42 @@
+#include "BluetoothSerial.h"
+
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error "Bluetooth no está habilitado. Usa la placa 'ESP32 Dev Module'."
+#endif
+
+#if !defined(CONFIG_BT_SPP_ENABLED)
+#error "Bluetooth Serial (SPP) no disponible en este chip. Usa un ESP32 clásico."
+#endif
+
+BluetoothSerial SerialBT;
+
+const int PIN_LED = 2;
+const char *NOMBRE_BT = "ESP DE STALIN";
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(PIN_LED, OUTPUT);
+  digitalWrite(PIN_LED, LOW);
+
+  SerialBT.begin(NOMBRE_BT);
+  Serial.println("Bluetooth listo. Empareja el celular con: ESP DE STALIN");
+}
+
+void loop() {
+  if (SerialBT.available()) {
+    char dato = SerialBT.read();
+
+    if (dato == '1') {
+      digitalWrite(PIN_LED, HIGH);
+      SerialBT.println("LED ENCENDIDO");
+      Serial.println("Recibido 1 -> LED ENCENDIDO");
+    }
+    else if (dato == '0') {
+      digitalWrite(PIN_LED, LOW);
+      SerialBT.println("LED APAGADO");
+      Serial.println("Recibido 0 -> LED APAGADO");
+    }
+  }
+  delay(10);
+}
+ 
