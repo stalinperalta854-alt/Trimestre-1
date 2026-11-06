@@ -1,0 +1,56 @@
+#include "BluetoothSerial.h"
+
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error "Bluetooth no habilitado. Usa una placa ESP32 clásica (ESP32 Dev Module)."
+#endif
+
+BluetoothSerial SerialBT;
+
+const int PIN_RELE1 = 26;
+const int PIN_RELE2 = 27;
+const bool ACTIVO_EN_ALTO = false;   // Cambiado a false para relés activos en bajo
+
+bool rele1 = false;
+bool rele2 = false;
+
+void aplicarRele(int pin, bool encendido) {
+  digitalWrite(pin, (encendido == ACTIVO_EN_ALTO) ? HIGH : LOW);
+}
+
+void enviarEstado() {
+  String estado = String(rele1 ? 1 : 0) + "," + String(rele2 ? 1 : 0);
+  SerialBT.print(estado);
+  SerialBT.print('\n');            // delimitador para App Inventor (DelimiterByte = 10)
+  Serial.println("Estado -> " + estado);
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(PIN_RELE1, OUTPUT);
+  pinMode(PIN_RELE2, OUTPUT);
+  aplicarRele(PIN_RELE1, false);   // arrancan apagados
+  aplicarRele(PIN_RELE2, false);
+
+  SerialBT.begin("ESP32_LadyLuna");    // nombre que verás en el celular
+  Serial.println("Bluetooth listo. Empareja el celular con ESP32_LadyLuna");
+}
+
+void loop() {
+  while (SerialBT.available()) {
+    char c = SerialBT.read();
+
+    switch (c) {
+      case 'A': rele1 = true;  break;
+      case 'a': rele1 = false; break;
+      case 'B': rele2 = true;  break;
+      case 'b': rele2 = false; break;
+      case '?': break;                 // solo pide estado
+      default:  continue;              // ignora \r, \n u otros
+    }
+
+    aplicarRele(PIN_RELE1, rele1);
+    aplicarRele(PIN_RELE2, rele2);
+    enviarEstado();
+  }
+}
